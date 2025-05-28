@@ -39,6 +39,8 @@
           packages = [ 
             phpWithOci8 
             pkgs.php84Packages.composer
+            pkgs.laravel
+            pkgs.nodejs_24
           ];
 
           shellHook = ''
