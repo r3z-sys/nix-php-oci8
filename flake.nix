@@ -16,7 +16,7 @@
 
         oracleClient = pkgs.callPackage ./oracle-instant-client { };
 
-        php = pkgs.php;
+        php = pkgs.php84;
 
         oci8Ext = php.buildPecl {
           pname = "oci8";
@@ -25,7 +25,7 @@
             url = "https://pecl.php.net/get/oci8-3.2.1.tgz";
             sha256 = "zyF703DzRZDBhlNFFt/dknmZ7layqhgjG1/ZDN+PEsg=";
           };
-          buildInputs = [ oracleClient pkgs.pkg-config pkgs.libaio ];
+          buildInputs = [ oracleClient pkgs.pkg-config pkgs.libaio  ];
           # Untuk runtime, tambahkan propagatedBuildInputs supaya libaio ada saat load oci8.so
           propagatedBuildInputs = [ pkgs.libaio ];
 
@@ -36,7 +36,10 @@
 
       in {
         devShells.default = pkgs.mkShell {
-          packages = [ phpWithOci8 ];
+          packages = [ 
+            phpWithOci8 
+            pkgs.php84Packages.composer
+          ];
 
           shellHook = ''
             export LD_LIBRARY_PATH=${oracleClient}/lib/oracle:${pkgs.libaio}/lib
