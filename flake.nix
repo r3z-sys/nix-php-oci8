@@ -1,0 +1,47 @@
+{
+  description = "PHP + OCI8 + Oracle Instant Client (unstable)";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+
+        oracleClient = pkgs.callPackage ./oracle-instant-client { };
+
+        php = pkgs.php;
+
+        oci8Ext = php.buildPecl {
+          pname = "oci8";
+          version = "3.2.1";
+          src = pkgs.fetchurl {
+            url = "https://pecl.php.net/get/oci8-3.2.1.tgz";
+            sha256 = "zyF703DzRZDBhlNFFt/dknmZ7layqhgjG1/ZDN+PEsg=";
+          };
+          buildInputs = [ oracleClient pkgs.pkg-config pkgs.libaio ];
+          # Untuk runtime, tambahkan propagatedBuildInputs supaya libaio ada saat load oci8.so
+          propagatedBuildInputs = [ pkgs.libaio ];
+
+          configureFlags = [ "--with-oci8=instantclient,${oracleClient}/lib/oracle" ];
+        };
+
+        phpWithOci8 = php.withExtensions (exts: [ oci8Ext ]);
+
+      in {
+        devShells.default = pkgs.mkShell {
+          packages = [ phpWithOci8 ];
+
+          shellHook = ''
+            export LD_LIBRARY_PATH=${oracleClient}/lib/oracle:${pkgs.libaio}/lib
+            echo "PHP with oci8 ready!"
+          '';
+        };
+      });
+}
